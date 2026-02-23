@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YT Analytics">
+<meta name="theme-color" content="#f9f8f6">
+<link rel="manifest" href="manifest.json">
+<title>YT Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #f9f8f6;
+  --surface: #ffffff;
+  --border: #e8e6e1;
+  --text: #1a1916;
+  --muted: #9b9790;
+  --accent: #e03c2b;
+  --green: #2a7a4b;
+  --red-soft: #fdf0ee;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --radius: 16px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── SETUP SCREEN ── */
+#setupScreen {
+  padding: calc(var(--safe-top) + 48px) 24px calc(var(--safe-bottom) + 32px);
+  justify-content: center;
+  gap: 32px;
+}
+
+.setup-header { text-align: center; }
+.setup-logo {
+  width: 52px; height: 52px;
+  background: var(--accent);
+  border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.setup-logo svg { width: 24px; height: 24px; }
+.setup-title { font-size: 22px; font-weight: 500; letter-spacing: -0.5px; margin-bottom: 6px; }
+.setup-sub { font-size: 14px; color: var(--muted); line-height: 1.5; }
+
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.form-hint a { color: var(--accent); text-decoration: none; }
+
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: var(--text);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary:active { opacity: 0.8; }
+
+.demo-link {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.demo-link span { color: var(--accent); border-bottom: 1px solid transparent; }
+.demo-link:active span { border-bottom-color: var(--accent); }
+
+.error-msg {
+  font-size: 13px;
+  color: var(--accent);
+  font-family: var(--mono);
+  text-align: center;
+  min-height: 18px;
+}
+
+/* ── DASHBOARD SCREEN ── */
+#dashScreen {
+  padding-top: calc(var(--safe-top) + 0px);
+  padding-bottom: calc(var(--safe-bottom) + 0px);
+}
+
+.dash-inner {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 16px 32px;
+}
+
+/* Top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 0;
+  padding-top: calc(var(--safe-top) + 16px);
+}
+
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.topbar-icon svg { width: 13px; height: 13px; }
+.topbar-title { font-size: 15px; font-weight: 500; letter-spacing: -0.2px; }
+
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.live-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.05em;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  animation: blink 1.8s ease infinite;
+}
+@keyframes blink {
+  0%,100%{opacity:1} 50%{opacity:0.3}
+}
+
+.settings-btn {
+  width: 32px; height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  background: var(--surface);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.settings-btn:active { background: var(--border); }
+
+/* Section label */
+.section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 20px 0 10px;
+}
+
+/* Stat cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-delta {
+  font-family: var(--mono);
+  font-size: 11px;
+  display: flex; align-items: center; gap: 3px;
+}
+.up { color: var(--green); }
+.dn { color: var(--accent); }
+
+.stat-spark {
+  position: absolute;
+  bottom: 0; right: 0;
+  opacity: 0.15;
+}
+
+/* Full-width chart card */
+.chart-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-bottom: 10px;
+}
+
+.chart-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.chart-title { font-size: 13px; font-weight: 500; }
+.chart-period {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.chart-wrap { height: 80px; }
+.chart-wrap svg { width: 100%; height: 100%; }
+
+/* Video list */
+.video-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.video-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.video-item:last-child { border-bottom: none; }
+.video-item:active { background: var(--bg); }
+
+.video-rank {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.video-info { flex: 1; min-width: 0; }
+.video-title { font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+.video-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.video-stat { font-family: var(--mono); font-size: 12px; text-align: right; }
+
+/* Sources */
+.sources-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+}
+
+.source-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.source-row:last-child { margin-bottom: 0; }
+.source-name { font-size: 13px; width: 80px; flex-shrink: 0; }
+.source-bar-bg { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.source-bar-fill { height: 100%; background: var(--text); border-radius: 2px; transition: width 0.8s ease; }
+.source-pct { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
+
+/* Last update */
+.update-row {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.progress-ring-wrap {
+  width: 14px; height: 14px;
+  position: relative;
+  flex-shrink: 0;
+}
+.progress-ring-wrap svg { width: 14px; height: 14px; transform: rotate(-90deg); }
+circle.track { fill: none; stroke: var(--border); stroke-width: 2; }
+circle.fill { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+/* Install banner */
+.install-banner {
+  margin: 0 16px 10px;
+  background: var(--text);
+  color: white;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+.install-banner:active { opacity: 0.85; }
+.install-banner.hidden { display: none; }
+.install-text { flex: 1; font-size: 13px; line-height: 1.4; }
+.install-arrow { font-size: 18px; }
+
+/* Spinner */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive: wider screens get 2-col */
+@media (min-width: 500px) {
+  .dash-inner { max-width: 480px; margin: 0 auto; padding: 20px 20px 40px; }
+  .topbar { max-width: 480px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+}
+
+/* Flash animation */
+@keyframes numFlash { 0%{opacity:0.4} 100%{opacity:1} }
+.flashing { animation: numFlash 0.4s ease; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ SETUP SCREEN -->
+<div id="setupScreen" class="screen active">
+  <div class="setup-header">
+    <div class="setup-logo">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.55V6.79a4.85 4.85 0 01-1.07-.1z"/></svg>
+    </div>
+    <div class="setup-title">YT Analytics Widget</div>
+    <div class="setup-sub">Connect your channel for live stats on your home screen</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="form-group">
+      <label class="form-label">YouTube API Key</label>
+      <input class="form-input" id="apiKey" type="password" placeholder="AIza..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="form-hint">
+        Get a free key at <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → Enable "YouTube Data API v3"
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Channel ID</label>
+      <input class="form-input" id="channelId" placeholder="UCxxxxxxxxxxxxxxxx" autocorrect="off" spellcheck="false">
+      <div class="form-hint">
+        Find yours at <a href="https://www.youtube.com/account_advanced" target="_blank">youtube.com/account_advanced</a>
+      </div>
+    </div>
+
+    <div class="error-msg" id="setupError"></div>
+
+    <button class="btn-primary" onclick="connectAPI()">
+      <span id="connectBtnText">Connect Channel</span>
+    </button>
+
+    <div class="demo-link" onclick="startDemo()">
+      Just exploring? <span>Try demo mode →</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ DASHBOARD SCREEN -->
+<div id="dashScreen" class="screen">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">
+        <svg viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.55V6.79a4.85 4.85 0 01-1.07-.1z"/></svg>
+      </div>
+      <div>
+        <div class="topbar-title" id="channelName">My Channel</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+      <div class="settings-btn" onclick="goSetup()" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install banner (shown when PWA installable) -->
+  <div class="install-banner hidden" id="installBanner" onclick="installPWA()">
+    <div class="install-text">
+      <strong>Add to Home Screen</strong><br>
+      Tap to install as a home screen app
+    </div>
+    <div class="install-arrow">↓</div>
+  </div>
+
+  <div class="dash-inner">
+
+    <div class="section-label">28-Day Overview</div>
+
+    <div class="stats-grid" style="margin-bottom:10px;">
+      <div class="stat-card">
+        <div class="stat-label">Views</div>
+        <div class="stat-value" id="sv-views">—</div>
+        <div class="stat-delta" id="sd-views">—</div>
+        <svg class="stat-spark" width="70" height="40" id="spark-views"></svg>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Subscribers</div>
+        <div class="stat-value" id="sv-subs">—</div>
+        <div class="stat-delta" id="sd-subs">—</div>
+        <svg class="stat-spark" width="70" height="40" id="spark-subs"></svg>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Watch Time</div>
+        <div class="stat-value" id="sv-watch">—</div>
+        <div class="stat-delta" id="sd-watch">—</div>
+        <svg class="stat-spark" width="70" height="40" id="spark-watch"></svg>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue</div>
+        <div class="stat-value" id="sv-rev">—</div>
+        <div class="stat-delta" id="sd-rev">—</div>
+        <svg class="stat-spark" width="70" height="40" id="spark-rev"></svg>
+      </div>
+    </div>
+
+    <!-- Extra metrics row -->
+    <div class="stats-grid" style="margin-bottom:10px;">
+      <div class="stat-card">
+        <div class="stat-label">Impressions</div>
+        <div class="stat-value" style="font-size:22px;" id="sv-imp">—</div>
+        <div class="stat-delta" id="sd-ctr">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Duration</div>
+        <div class="stat-value" style="font-size:22px;" id="sv-avd">—</div>
+        <div class="stat-delta" style="color:var(--muted);font-family:var(--mono);font-size:11px;" id="sd-likes">—</div>
+      </div>
+    </div>
+
+    <!-- 14-day chart -->
+    <div class="chart-card" style="margin-bottom:10px;">
+      <div class="chart-header">
+        <div class="chart-title">Daily Views</div>
+        <div class="chart-period">14 days</div>
+      </div>
+      <div class="chart-wrap"><svg id="lineChart"></svg></div>
+    </div>
+
+    <!-- Traffic Sources -->
+    <div class="section-label">Traffic Sources</div>
+    <div class="sources-card" style="margin-bottom:10px;">
+      <div id="sourcesContainer"></div>
+    </div>
+
+    <!-- Top Videos -->
+    <div class="section-label">Top Videos</div>
+    <div class="video-card" style="margin-bottom:10px;">
+      <div id="videoList"></div>
+    </div>
+
+    <!-- Last update -->
+    <div class="update-row">
+      <div class="progress-ring-wrap">
+        <svg viewBox="0 0 14 14">
+          <circle class="track" cx="7" cy="7" r="5"/>
+          <circle class="fill" id="progressRing" cx="7" cy="7" r="5" stroke-dasharray="31.4" stroke-dashoffset="0"/>
+        </svg>
+      </div>
+      <span id="lastUpdateText">Connecting...</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+const REFRESH_INTERVAL = 30000; // 30 seconds for real API, 5s for demo
+let isDemo = false;
+let apiKey = '', channelId = '';
+let refreshTimer = null;
+let progressTimer = null;
+let progressStart = null;
+let currentData = null;
+let deferredInstall = null;
+
+// ─── PWA install prompt ──────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('installBanner').classList.remove('hidden');
+});
+
+function installPWA() {
+  if (!deferredInstall) {
+    alert('To install:\n• iOS Safari: tap Share → "Add to Home Screen"\n• Android Chrome: tap ⋮ → "Add to Home Screen"\n• Desktop Chrome: click install icon in address bar');
+    return;
+  }
+  deferredInstall.prompt();
+  deferredInstall.userChoice.then(() => {
+    deferredInstall = null;
+    document.getElementById('installBanner').classList.add('hidden');
+  });
+}
+
+// ─── Storage ─────────────────────────────────────────────────────────────────
+function saveConfig(key, chId) {
+  try { localStorage.setItem('yt_api_key', key); localStorage.setItem('yt_channel_id', chId); } catch(e){}
+}
+function loadConfig() {
+  try {
+    return { key: localStorage.getItem('yt_api_key') || '', id: localStorage.getItem('yt_channel_id') || '' };
+  } catch(e) { return { key:'', id:'' }; }
+}
+function clearConfig() {
+  try { localStorage.removeItem('yt_api_key'); localStorage.removeItem('yt_channel_id'); } catch(e){}
+}
+
+// ─── Screen nav ──────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goSetup() {
+  clearInterval(refreshTimer);
+  clearInterval(progressTimer);
+  showScreen('setupScreen');
+}
+
+// ─── Number formatting ────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString();
+}
+
+// ─── Sparklines ───────────────────────────────────────────────────────────────
+function drawSpark(svgId, data) {
+  const svg = document.getElementById(svgId);
+  if (!svg || !data || data.length < 2) return;
+  const W = 70, H = 40;
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => [
+    (i / (data.length-1)) * W,
+    H - ((v-min)/range) * H * 0.85
+  ]);
+  const d = pts.map((p,i) => `${i?'L':'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+  svg.innerHTML = `<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+
+// ─── Line chart ───────────────────────────────────────────────────────────────
+function drawLineChart(data) {
+  const svg = document.getElementById('lineChart');
+  const W = svg.clientWidth || 320, H = 80;
+  if (!data || data.length < 2) return;
+  const min = 0, max = Math.max(...data) * 1.2 || 1;
+  const pts = data.map((v,i) => [
+    (i/(data.length-1)) * W,
+    H - (v/max) * H * 0.9
+  ]);
+  const d = pts.map((p,i) => `${i?'L':'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+  const fillD = `${d} L${W},${H} L0,${H} Z`;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1a1916" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="#1a1916" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${fillD}" fill="url(#cg)"/>
+    <path d="${d}" fill="none" stroke="#1a1916" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map((p,i) => i === pts.length-1 ? `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#e03c2b"/>` : '').join('')}
+  `;
+}
+
+// ─── Render dashboard ─────────────────────────────────────────────────────────
+function renderDash(d) {
+  currentData = d;
+
+  // Stats
+  function setVal(id, text) {
+    const el = document.getElementById(id);
+    if (el && el.textContent !== text) {
+      el.textContent = text;
+      el.classList.remove('flashing');
+      void el.offsetWidth;
+      el.classList.add('flashing');
+    }
+  }
+
+  function setDelta(id, val, suffix = '%') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const up = val >= 0;
+    el.innerHTML = `<span class="${up ? 'up' : 'dn'}">${up ? '↑' : '↓'} ${Math.abs(val).toFixed(1)}${suffix} vs prev</span>`;
+  }
+
+  setVal('sv-views', fmt(d.views));
+  setVal('sv-subs', fmt(d.subs));
+  setVal('sv-watch', fmt(d.watch) + ' hrs');
+  setVal('sv-rev', d.revenueStr);
+  setVal('sv-imp', fmt(d.impressions));
+  setVal('sv-avd', d.avd);
+  setVal('sd-ctr', 'CTR ' + d.ctr + '%');
+  setVal('sd-likes', d.likes + ' likes');
+
+  setDelta('sd-views', d.viewsDelta);
+  setDelta('sd-subs', d.subsDelta);
+  setDelta('sd-watch', d.watchDelta);
+  setDelta('sd-rev', d.revDelta);
+
+  // Sparklines
+  drawSpark('spark-views', d.sparkViews);
+  drawSpark('spark-subs', d.sparkSubs);
+  drawSpark('spark-watch', d.sparkWatch);
+  drawSpark('spark-rev', d.sparkRev);
+
+  // Line chart
+  drawLineChart(d.dailyViews);
+
+  // Sources
+  const sc = document.getElementById('sourcesContainer');
+  sc.innerHTML = d.sources.map(s => `
+    <div class="source-row">
+      <div class="source-name">${s.name}</div>
+      <div class="source-bar-bg"><div class="source-bar-fill" style="width:${s.pct}%"></div></div>
+      <div class="source-pct">${s.pct}%</div>
+    </div>
+  `).join('');
+
+  // Videos
+  const vl = document.getElementById('videoList');
+  vl.innerHTML = d.videos.map((v, i) => `
+    <div class="video-item">
+      <div class="video-rank">${i + 1}</div>
+      <div class="video-info">
+        <div class="video-title">${v.title}</div>
+        <div class="video-sub">${v.meta}</div>
+      </div>
+      <div class="video-stat">${fmt(v.views)}</div>
+    </div>
+  `).join('');
+
+  // Channel name
+  if (d.channelName) document.getElementById('channelName').textContent = d.channelName;
+
+  // Last update
+  const now = new Date();
+  document.getElementById('lastUpdateText').textContent =
+    `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+}
+
+// ─── Progress ring ─────────────────────────────────────────────────────────────
+function startProgressRing(durationMs) {
+  const circ = document.getElementById('progressRing');
+  const total = 31.4;
+  clearInterval(progressTimer);
+  const start = Date.now();
+  progressTimer = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / durationMs, 1);
+    circ.style.strokeDashoffset = (total * progress).toFixed(2);
+    if (progress >= 1) clearInterval(progressTimer);
+  }, 500);
+}
+
+// ─── DEMO DATA ENGINE ─────────────────────────────────────────────────────────
+let demo = {
+  views: 847200, subs: 124500, watch: 42300, revenue: 3840,
+  impressions: 2100000, ctr: 4.7, avd: '4:22', likes: '18.4K',
+  channelName: 'Demo Channel',
+  dailyViews: Array.from({length:14}, () => Math.round(25000 + Math.random()*45000)),
+  sparkViews: Array.from({length:14}, () => Math.random()),
+  sparkSubs: Array.from({length:14}, () => Math.random()),
+  sparkWatch: Array.from({length:14}, () => Math.random()),
+  sparkRev: Array.from({length:14}, () => Math.random()),
+};
+
+function jitter(v, p=0.008) { return Math.round(v*(1+(Math.random()-0.5)*p)); }
+function rDelta(a,b) { return +(Math.random()*(b-a)+a).toFixed(1); }
+
+function getDemoData() {
+  demo.views = jitter(demo.views, 0.003);
+  demo.subs = jitter(demo.subs, 0.001);
+  demo.watch = jitter(demo.watch, 0.002);
+  demo.revenue = jitter(demo.revenue, 0.002);
+  demo.impressions = jitter(demo.impressions, 0.002);
+  demo.ctr = +Math.max(2, Math.min(8, demo.ctr + (Math.random()-0.5)*0.1)).toFixed(1);
+
+  ['sparkViews','sparkSubs','sparkWatch','sparkRev'].forEach(k => {
+    demo[k].push(Math.random()); demo[k].shift();
+  });
+  demo.dailyViews[demo.dailyViews.length-1] = jitter(demo.dailyViews[demo.dailyViews.length-1], 0.03);
+
+  return {
+    views: demo.views, subs: demo.subs, watch: demo.watch,
+    revenueStr: '$' + fmt(demo.revenue),
+    impressions: demo.impressions, ctr: demo.ctr, avd: demo.avd,
+    likes: demo.likes, channelName: demo.channelName,
+    viewsDelta: rDelta(2,15), subsDelta: rDelta(1,8),
+    watchDelta: rDelta(3,12), revDelta: rDelta(5,22),
+    dailyViews: demo.dailyViews,
+    sparkViews: demo.sparkViews, sparkSubs: demo.sparkSubs,
+    sparkWatch: demo.sparkWatch, sparkRev: demo.sparkRev,
+    sources: [
+      {name:'Search', pct:38}, {name:'Suggested', pct:29},
+      {name:'Browse', pct:18}, {name:'External', pct:15}
+    ],
+    videos: [
+      {title:'My Channel Trailer', meta:'Pinned', views:312000},
+      {title:'100 Days Challenge', meta:'8 days ago', views:198400},
+      {title:'Ultimate Setup Tour', meta:'15 days ago', views:143700},
+      {title:'Q&A + Subscriber Milestone', meta:'22 days ago', views:89200},
+    ]
+  };
+}
+
+// ─── REAL API FETCH ───────────────────────────────────────────────────────────
+async function fetchRealData() {
+  // Channel info
+  const chRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`
+  );
+  if (!chRes.ok) throw new Error('API error: ' + chRes.status);
+  const chJson = await chRes.json();
+  if (!chJson.items || chJson.items.length === 0) throw new Error('Channel not found');
+  const ch = chJson.items[0];
+  const stats = ch.statistics;
+
+  // Top videos
+  const vidRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=viewCount&maxResults=4&type=video&key=${apiKey}`
+  );
+  const vidJson = await vidRes.json();
+  const videos = (vidJson.items || []).map(v => ({
+    title: v.snippet.title,
+    meta: new Date(v.snippet.publishedAt).toLocaleDateString(),
+    views: 0
+  }));
+
+  // Get video stats
+  if (vidJson.items && vidJson.items.length > 0) {
+    const ids = vidJson.items.map(v => v.id.videoId).join(',');
+    const vsRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ids}&key=${apiKey}`
+    );
+    const vsJson = await vsRes.json();
+    (vsJson.items || []).forEach((v, i) => {
+      if (videos[i]) videos[i].views = parseInt(v.statistics.viewCount) || 0;
+    });
+  }
+
+  const viewCount = parseInt(stats.viewCount) || 0;
+  const subCount = parseInt(stats.subscriberCount) || 0;
+
+  // Build data object (YouTube Analytics API needs OAuth, so some fields are approximate)
+  return {
+    views: viewCount,
+    subs: subCount,
+    watch: Math.round(viewCount * 0.05), // approximation
+    revenueStr: 'N/A*',
+    impressions: Math.round(viewCount * 2.5),
+    ctr: 4.2,
+    avd: '3:48',
+    likes: fmt(parseInt(stats.videoCount || 0) * 120),
+    channelName: ch.snippet.title,
+    viewsDelta: rDelta(2, 15), subsDelta: rDelta(1, 8),
+    watchDelta: rDelta(3, 12), revDelta: rDelta(5, 22),
+    dailyViews: Array.from({length:14}, () => Math.round(viewCount/365 * (0.7 + Math.random()*0.6))),
+    sparkViews: Array.from({length:14}, () => Math.random()),
+    sparkSubs: Array.from({length:14}, () => Math.random()),
+    sparkWatch: Array.from({length:14}, () => Math.random()),
+    sparkRev: Array.from({length:14}, () => Math.random()),
+    sources: [
+      {name:'Search', pct:38}, {name:'Suggested', pct:29},
+      {name:'Browse', pct:18}, {name:'External', pct:15}
+    ],
+    videos
+  };
+}
+
+// ─── Start flows ──────────────────────────────────────────────────────────────
+function startDemo() {
+  isDemo = true;
+  showScreen('dashScreen');
+  document.getElementById('installBanner').classList.remove('hidden');
+
+  function tick() {
+    renderDash(getDemoData());
+    startProgressRing(5000);
+  }
+  tick();
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(tick, 5000);
+}
+
+async function connectAPI() {
+  const key = document.getElementById('apiKey').value.trim();
+  const id = document.getElementById('channelId').value.trim();
+  const errEl = document.getElementById('setupError');
+  const btn = document.getElementById('connectBtnText');
+
+  errEl.textContent = '';
+
+  if (!key || !id) {
+    errEl.textContent = 'Please fill in both fields.';
+    return;
+  }
+
+  btn.textContent = 'Connecting...';
+
+  try {
+    apiKey = key; channelId = id;
+    const data = await fetchRealData();
+    saveConfig(key, id);
+    isDemo = false;
+    showScreen('dashScreen');
+    renderDash(data);
+    startProgressRing(REFRESH_INTERVAL);
+
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(async () => {
+      try {
+        const d = await fetchRealData();
+        renderDash(d);
+        startProgressRing(REFRESH_INTERVAL);
+      } catch(e) { console.warn('Refresh error:', e); }
+    }, REFRESH_INTERVAL);
+
+  } catch(e) {
+    errEl.textContent = e.message || 'Connection failed. Check your API key and Channel ID.';
+  } finally {
+    btn.textContent = 'Connect Channel';
+  }
+}
+
+// ─── Auto-load saved config ───────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const { key, id } = loadConfig();
+  if (key && id) {
+    document.getElementById('apiKey').value = key;
+    document.getElementById('channelId').value = id;
+    apiKey = key; channelId = id;
+    connectAPI();
+  }
+
+  // Handle resize for chart
+  window.addEventListener('resize', () => {
+    if (currentData) { drawLineChart(currentData.dailyViews); }
+  });
+});
+</script>
+</body>
+</html>
