@@ -1,17 +1,18 @@
 {
-  "name": "YT Analytics Widget",
-  "short_name": "YT Analytics",
-  "description": "Live YouTube Studio analytics on your home screen",
+  "name": "YT Studio Pro",
+  "short_name": "YT Studio",
+  "description": "Full YouTube analytics dashboard - live on your home screen",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f9f8f6",
-  "theme_color": "#f9f8f6",
-  "orientation": "portrait",
+  "background_color": "#0a0a14",
+  "theme_color": "#0a0a14",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://www.youtube.com/favicon.ico",
-      "sizes": "32x32",
-      "type": "image/x-icon"
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
